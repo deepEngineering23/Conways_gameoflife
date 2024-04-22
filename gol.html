@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conway's Game of Life</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            padding-top: 20px; /* Add padding to keep buttons at the top */
+        }
+        
+        canvas {
+            border: 1px solid black;
+        }
+        
+        #buttonContainer {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
+            z-index: 1; /* Ensure buttons are on top of canvas */
+        }
+        
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="buttonContainer">
+        <button id="startButton">Start</button>
+        <button id="pauseButton">Pause</button>
+        <button id="restartButton">Restart</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const cellSize = 10;
+        const numRows = Math.floor(window.innerHeight / cellSize);
+        const numCols = Math.floor(window.innerWidth / cellSize);
+
+        canvas.width = numCols * cellSize;
+        canvas.height = numRows * cellSize;
+
+        function createGrid() {
+            const grid = [];
+            for (let i = 0; i < numRows; i++) {
+                grid[i] = [];
+                for (let j = 0; j < numCols; j++) {
+                    grid[i][j] = Math.random() > 0.7 ? 1 : 0;
+                }
+            }
+            return grid;
+        }
+
+        let grid = createGrid();
+        let isRunning = false;
+        let animationId = null;
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < numRows; i++) {
+                for (let j = 0; j < numCols; j++) {
+                    if (grid[i][j] === 1) {
+                        ctx.fillStyle = 'blue';
+                        ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+        }
+
+        function updateGrid() {
+            const newGrid = [];
+            for (let i = 0; i < numRows; i++) {
+                newGrid[i] = [];
+                for (let j = 0; j < numCols; j++) {
+                    const neighbors = countNeighbors(i, j);
+                    if (grid[i][j] === 1 && (neighbors < 2 || neighbors > 3)) {
+                        newGrid[i][j] = 0;
+                    } else if (grid[i][j] === 0 && neighbors === 3) {
+                        newGrid[i][j] = 1;
+                    } else {
+                        newGrid[i][j] = grid[i][j];
+                    }
+                }
+            }
+            grid = newGrid;
+        }
+
+        function countNeighbors(row, col) {
+            let count = 0;
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    const r = row + i;
+                    const c = col + j;
+                    if (r >= 0 && r < numRows && c >= 0 &&
+                        c < numCols && !(i === 0 && j === 0)) {
+                        count += grid[r][c];
+                    }
+                }
+            }
+            return count;
+        }
+
+        function mainLoop() {
+            updateGrid();
+            drawGrid();
+            if (isRunning) {
+                animationId = requestAnimationFrame(mainLoop);
+            }
+        }
+
+        document.getElementById('startButton').addEventListener('click', function() {
+            if (!isRunning) {
+                isRunning = true;
+                mainLoop();
+            }
+        });
+
+        document.getElementById('pauseButton').addEventListener('click', function() {
+            isRunning = false;
+            cancelAnimationFrame(animationId);
+        });
+
+        document.getElementById('restartButton').addEventListener('click', function() {
+            isRunning = false;
+            cancelAnimationFrame(animationId);
+            grid = createGrid();
+            drawGrid();
+        });
+
+        // Initial draw
+        drawGrid();
+
+        // Redraw on window resize
+        window.addEventListener('resize', function() {
+            numRows = Math.floor(window.innerHeight / cellSize);
+            numCols = Math.floor(window.innerWidth / cellSize);
+            canvas.width = numCols * cellSize;
+            canvas.height = numRows * cellSize;
+            grid = createGrid();
+            drawGrid();
+        });
+
+    </script>
+</body>
+
+</html>
+
